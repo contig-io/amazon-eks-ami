@@ -27,7 +27,8 @@
     "cgroupDriver": "systemd",
     "cgroupRoot": "/",
     "featureGates": {
-        "RotateKubeletServerCertificate": true
+        "RotateKubeletServerCertificate": true,
+        "ContainerCheckpoint": true
     },
     "protectKernelDefaults": true,
     "serializeImagePulls": false,
