@@ -260,6 +260,7 @@ if [[ "$INSTALL_DOCKER" == "true" ]]; then
 
   # Enable docker daemon to start on boot.
   sudo systemctl daemon-reload
+fi
 
 ###############################################################################
 ### CRI-O setup ###############################################################
@@ -272,21 +273,21 @@ if [[ "$INSTALL_CRIO" == "true" ]]; then
         ## this means we are building a gpu ami and have already placed a crio configuration file in /etc/eks
         echo "crio config is already present"
     else
-        sudo mv $TEMPLATE_DIR/crio.conf /etc/eks/crio/crio.conf
+        sudo mv $WORKING_DIR/crio.conf /etc/eks/crio/crio.conf
     fi
-    sudo mv $TEMPLATE_DIR/kubelet-crio.service /etc/eks/crio/kubelet-crio.service
+    sudo mv $WORKING_DIR/kubelet-crio.service /etc/eks/crio/kubelet-crio.service
 
     sudo mkdir /etc/containers
-    sudo mv $TEMPLATE_DIR/containers-policy.json /etc/containers/policy.json
+    sudo mv $WORKING_DIR/containers-policy.json /etc/containers/policy.json
 
-    sudo mv $TEMPLATE_DIR/pause-image.service /etc/eks/crio/pause-image.service
-    sudo mv $TEMPLATE_DIR/pull-pause-image.sh /etc/eks/crio/pull-pause-image.sh
+    sudo mv $WORKING_DIR/pause-image.service /etc/eks/crio/pause-image.service
+    sudo mv $WORKING_DIR/pull-pause-image.sh /etc/eks/crio/pull-pause-image.sh
     sudo chmod +x /etc/eks/crio/pull-pause-image.sh
 
     VERSION=${KUBERNETES_VERSION%.*}
 
     # Install crictl
-    CRICTL_VERSION="1.23.0"
+    CRICTL_VERSION="1.27.1"
     curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/v$CRICTL_VERSION/crictl-v$CRICTL_VERSION-linux-amd64.tar.gz --output crictl-${CRICTL_VERSION}-linux-amd64.tar.gz
     sudo tar zxvf crictl-$CRICTL_VERSION-linux-amd64.tar.gz -C /usr/bin
     rm -f crictl-$CRICTL_VERSION-linux-amd64.tar.gz
@@ -307,8 +308,8 @@ if [[ "$INSTALL_CRIO" == "true" ]]; then
         make \
         runc
 
-    wget https://go.dev/dl/go1.17.8.linux-amd64.tar.gz
-    tar -xvzf go1.17.8.linux-amd64.tar.gz
+    wget https://go.dev/dl/go1.20.11.linux-amd64.tar.gz
+    tar -xvzf go1.20.11.linux-amd64.tar.gz
     sudo ln -sf /home/ec2-user/go/bin/go /usr/bin/go
 
     git clone https://github.com/cri-o/cri-o
@@ -444,7 +445,7 @@ sudo mv $WORKING_DIR/kubelet-kubeconfig /var/lib/kubelet/kubeconfig
 sudo chown root:root /var/lib/kubelet/kubeconfig
 
 if [[ $INSTALL_CRIO == "true" ]]; then
-    mv $TEMPLATE_DIR/kubelet-config-crio.json $TEMPLATE_DIR/kubelet-config.json
+    mv $WORKING_DIR/kubelet-config-crio.json $WORKING_DIR/kubelet-config.json
 fi
 
 # Inject CSIServiceAccountToken feature gate to kubelet config if kubernetes version starts with 1.20.
