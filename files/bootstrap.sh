@@ -122,7 +122,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --container-runtime)
-      CONTAINER_RUNTIME=$2
+      CONTAINER_RUNTIME=crio
       log "INFO: --container-runtime='${CONTAINER_RUNTIME}'"
       shift
       shift
@@ -194,18 +194,13 @@ ENABLE_DOCKER_BRIDGE="${ENABLE_DOCKER_BRIDGE:-false}"
 
 # As of Kubernetes version 1.24, we will start defaulting the container runtime to containerd
 # and no longer support docker as a container runtime.
-DEFAULT_CONTAINER_RUNTIME=dockerd
+DEFAULT_CONTAINER_RUNTIME=crio
 if vercmp "$KUBELET_VERSION" gteq "1.24.0"; then
-  DEFAULT_CONTAINER_RUNTIME=containerd
+  DEFAULT_CONTAINER_RUNTIME=crio
 fi
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-$DEFAULT_CONTAINER_RUNTIME}"
 
 log "INFO: Using $CONTAINER_RUNTIME as the container runtime"
-
-if vercmp "$KUBELET_VERSION" gteq "1.24.0" && [ $CONTAINER_RUNTIME != "containerd" ]; then
-  log "ERROR: containerd is the only supported container runtime as of Kubernetes version 1.24"
-  exit 1
-fi
 
 USE_MAX_PODS="${USE_MAX_PODS:-true}"
 B64_CLUSTER_CA="${B64_CLUSTER_CA:-}"
@@ -338,8 +333,6 @@ systemctl enable --now configure-clocksource
 ECR_URI=$(/etc/eks/get-ecr-uri.sh "${AWS_DEFAULT_REGION}" "${AWS_SERVICES_DOMAIN}" "${PAUSE_CONTAINER_ACCOUNT:-}")
 PAUSE_CONTAINER_IMAGE=${PAUSE_CONTAINER_IMAGE:-$ECR_URI/eks/pause}
 PAUSE_CONTAINER="$PAUSE_CONTAINER_IMAGE:$PAUSE_CONTAINER_VERSION"
-
-AWS_REGISTRY_URL="$PAUSE_CONTAINER_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.$AWS_SERVICES_DOMAIN"
 
 ### kubelet kubeconfig
 
@@ -594,12 +587,11 @@ if [[ "$CONTAINER_RUNTIME" = "containerd" ]]; then
   fi
 elif [[ "$CONTAINER_RUNTIME" = "crio" ]]; then
     sudo mkdir -p /etc/cni/net.d
-    sudo sed -i s,AWS_REGISTRY,$AWS_REGISTRY_URL,g /etc/eks/crio/crio.conf
     sudo sed -i s,DEFAULT_REGION,$AWS_DEFAULT_REGION,g /etc/eks/crio/crio.conf
     sudo sed -i s,PAUSE_CONTAINER,$PAUSE_CONTAINER,g /etc/eks/crio/crio.conf
-    sudo mv /etc/eks/crio/crio.conf /etc/crio/crio.conf
-    sudo mv /etc/eks/crio/pause-image.service /etc/systemd/system/pause-image.service
-    sudo mv /etc/eks/crio/kubelet-crio.service /etc/systemd/system/kubelet.service
+    sudo cp /etc/eks/crio/crio.conf /etc/crio/crio.conf
+    sudo cp /etc/eks/crio/pause-image.service /etc/systemd/system/pause-image.service
+    sudo cp /etc/eks/crio/kubelet-crio.service /etc/systemd/system/kubelet.service
     sudo chown root:root /etc/systemd/system/kubelet.service
     sudo ln -sf /var/run/crio/crio.sock /var/run/dockershim.sock
     systemctl daemon-reload

@@ -278,6 +278,7 @@ if [[ "$INSTALL_CRIO" == "true" ]]; then
     sudo mv $WORKING_DIR/kubelet-crio.service /etc/eks/crio/kubelet-crio.service
 
     sudo mkdir /etc/containers
+    sudo mv $WORKING_DIR/containers-registries.conf /etc/containers/registries.conf
     sudo mv $WORKING_DIR/containers-policy.json /etc/containers/policy.json
 
     sudo mv $WORKING_DIR/pause-image.service /etc/eks/crio/pause-image.service
